@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ConsoleApplications.Connect4
 {
-    class Board
+    class Connect4
     {
         #region Fields
         List<List<char>> board = new List<List<char>>();
@@ -16,7 +16,7 @@ namespace ConsoleApplications.Connect4
         /// <summary>
         /// Default constructor. Creates a 4x4 board
         /// </summary>
-        public Board()
+        public Connect4()
         {
             List<char> row = new List<char>(new char[] { '.', '.', '.', '.' });
             for (int i = 0; i < 4; i++)
@@ -28,24 +28,22 @@ namespace ConsoleApplications.Connect4
         }
 
         /// <summary>
-        /// Creates a (row x col) board
+        /// Creates a (width x height) board
         /// </summary>
-        /// <param name="row">Height</param>
-        /// <param name="col">Width</param>
-        public Board(int row, int col)
+        /// <param name="height">Height</param>
+        /// <param name="width">Width</param>
+        public Connect4(int height, int width)
         {
             List<char> r = new List<char>();
-            for (int i = 0; i < row; i++)
+            for (int i = 0; i < height; i++)
             {
-                for (int j = 0; j < col; j++)
+                for (int j = 0; j < width; j++)
                 {
                     r.Add('.');
                 }
                 board.Add(r);
                 r = new List<char>();
             }
-            //            width = board[0].Count;
-            //            height = board.Count;
         }
 
         #endregion Constructors
@@ -54,7 +52,7 @@ namespace ConsoleApplications.Connect4
         // "Drops" a piece into a column
         public void add(Piece p, int col)
         {
-            col--;
+            col--; // Adjust to 0 index
             // If out of bounds on either side, add to the outermost side
             if (col <= 0) col = 0;
             else if (col >= width) col = width - 1;
@@ -153,7 +151,7 @@ namespace ConsoleApplications.Connect4
             }
             else
             {
-                Board newboard = new Board(this.width, this.height);
+                Connect4 newboard = new Connect4(this.width, this.height);
 
                 for (int r = 0; r < height; r++)
                 {
@@ -253,7 +251,7 @@ namespace ConsoleApplications.Connect4
         }
         #endregion Flip
 
-        // Make pieces fall to the bottom of the board after rotate
+        // Make pieces fall to the bottom of the board
         public void gravity()
         {
             int start;
@@ -314,6 +312,7 @@ namespace ConsoleApplications.Connect4
                 return v1;
             }
 
+            // Converts the vector to a unit vector
             public void toUnitVector()
             {
                 double x = Math.Pow(this.x, 2);
@@ -328,6 +327,7 @@ namespace ConsoleApplications.Connect4
             {
                 return String.Format("<{0,2}, {1,2}>", this.x, this.y);
             }
+
             public override bool Equals(object obj)
             {
                 if (obj == null)
@@ -339,8 +339,15 @@ namespace ConsoleApplications.Connect4
                 }
                 catch (InvalidCastException) { return false; }
             }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
         }
 
+        // Returns the character that is in the direction given by v from board[i][j]
+        // Assumes v is a whole numbered unit vector
         private char? charAt(int i, int j, Vector v)
         {
             try
@@ -349,10 +356,12 @@ namespace ConsoleApplications.Connect4
             }
             catch (Exception) { return null; }
         }
+
+        // Returns a vector in the direction of the next character that is the 
+        // same as the character at board[r][c], if no character is found
+        // <0,0> is returned
         private Vector inARowDirection(int r, int c)
         {
-
-
             char curr = board[r][c];
 
             for (int i = -1; i < 2; i++)
@@ -373,37 +382,39 @@ namespace ConsoleApplications.Connect4
                 }
             }
 
-            return new Vector();
+            return new Vector(); // Return a null vector <0,0>
         }
 
-        // TODO: Check for n pieces in a row (default 4)
+        // DONE: Check for n pieces in a row (default 4)
         public bool nInARow(int n = 4)
         {
-            //            Console.WriteLine(inARowDirection(1, 1));
-
             int inARow;
             int row_index;
             int col_index;
             char? next;
             Vector null_vector = new Vector(0, 0);
-            //            Vector prev = inARowDirection(row_index, col_index); // Start at the top
+            //            Vector prev = inARowDirection(row_index, col_index); 
 
             Vector curr;
+            // Start at the bottom row
             for (int row = board.Count - 1; row >= 0; row--)
             {
-
+                // Start at the left column
                 for (int col = 0; col < board[0].Count; col++)
                 {
                     char c = board[row][col]; // Get the current character
-                    curr = inARowDirection(row, col); // Get the vector of a surrounding character
+                    curr = inARowDirection(row, col); // Get the vector for a surrounding character
 
                     if (!curr.Equals(null_vector))
                         next = charAt(row, col, curr); // Gets the next character in the direction of the vector
                     else continue;
 
+                    // Reset counts through each loop
                     inARow = 1;
                     row_index = 0;
                     col_index = 0;
+
+                    // While the character in the direction of the vector is the same
                     while (c == charAt(row, col, curr))
                     {
                         if (inARow == 1) // Initializes row_index & col_index
@@ -417,9 +428,7 @@ namespace ConsoleApplications.Connect4
                             col_index += (int)curr.x;
                         }
 
-                        Console.Write("{3, 2} [{0} {1}] {2,4}\t", row_index, col_index, curr, board[row][col]);
                         inARow++; // self explanatory...
-                        Console.WriteLine(inARow);
 
                         if (inARow == n) // also self explanatory
                         {
@@ -441,6 +450,8 @@ namespace ConsoleApplications.Connect4
             return false;
 
         }
+
+        // Generics memory swap
         private void swap<T>(ref T a, ref T b)
         {
             T temp = a;
@@ -448,6 +459,7 @@ namespace ConsoleApplications.Connect4
             b = temp;
         }
 
+        // Returns a string representation of the board
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
